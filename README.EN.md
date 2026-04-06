@@ -14,15 +14,14 @@ A comprehensive MCP (Model Context Protocol) server plugin for Cocos Creator 3.8
 
 ## Quick Links
 
-- **[📖 Complete Feature Guide (English)](FEATURE_GUIDE_EN.md)** - Detailed documentation for all 50 tools (to be completed)
-- **[📖 完整功能指南 (中文)](FEATURE_GUIDE_CN.md)** - All 50 tools detailed documentation (to be completed)
+- **[📖 Complete Feature Guide (English)](FEATURE_GUIDE_EN.md)** - Detailed documentation & schemas for all 27 core tools
+- **[📖 完整功能指南 (中文)](FEATURE_GUIDE_CN.md)** - 核心 27 个高频工具的规范文档与使用用例
 
 
 ## Changelog
 
-## 🚀 Major Update v1.5.0 (July 29, 2024) (Already updated in Cocos Store, GitHub version will be synchronized in next version)
-
-Cocos store: https://store.cocos.com/app/detail/7941
+## 🚀 Latest Update (v1.4.0)
+The plugin is currently in local testing and GitHub maintenance. Core functionalities have achieved major tool streamlining and performance optimization.
 
 - **Ultimate Tool Streamlining and Refactoring (Stage 2)**: Condensed the original 149/158 atomic tools into a highly aggregated, cohesive set of just **27** core polymorphic tools! We removed all non-essential and edge-case modules, tremendously relieving context pressure (Context Fatigue) for large language models and entirely eliminating AI tool hallucination problems.
 - **Unified Action Payload System**: All entry points for Assets, Prefabs, and Project workflows now adopt a "Single entry point + action parameter" routing model. This massively halves the total schema payload, slashing token usage by up to 60% per request and dramatically increasing AI response speeds.
@@ -41,11 +40,10 @@ Cocos store: https://store.cocos.com/app/detail/7941
 
 ```json
 {
-  "tool": "node_lifecycle",
+  "tool": "node_create_node",
   "arguments": {
-    "action": "create",
     "name": "MyNode",
-    "parentUuid": "parent-uuid",
+    "parentUuid": "scene-root-uuid",
     "nodeType": "2DNode"
   }
 }
@@ -63,84 +61,6 @@ Cocos store: https://store.cocos.com/app/detail/7941
 - **project_manage / project_build_system**: Project running, building, configuration information
 - **debug_console / debug_logs**: Console and log management
 - **preferences / server / broadcast / validation etc.** have been completely decoupled and removed in this release to save critical context limits.
-
-
-### v1.4.0 - July 26, 2025 (Current github version)
-
-#### 🎯 Major Functionality Fixes
-- **Complete Prefab Creation Fix**: Thoroughly resolved the issue of component/node/resource type reference loss during prefab creation
-- **Proper Reference Handling**: Implemented reference formats completely consistent with manually created prefabs
-  - **Internal References**: Node and component references within prefabs correctly converted to `{"__id__": x}` format
-  - **External References**: Node and component references outside prefabs correctly set to `null`
-  - **Resource References**: Prefab, texture, sprite frame and other resource references fully preserved in UUID format
-- **Component/Script Removal API Standardization**: Now, when removing a component or script, you must provide the component's cid (type field), not the script name or class name. AI and users should first use getComponents to get the type field (cid), then pass it to removeComponent. This ensures 100% accurate removal of all component and script types, compatible with all Cocos Creator versions.
-
-#### 🔧 Core Improvements
-- **Index Order Optimization**: Adjusted prefab object creation order to ensure consistency with Cocos Creator standard format
-- **Component Type Support**: Extended component reference detection to support all cc. prefixed component types (Label, Button, Sprite, etc.)
-- **UUID Mapping Mechanism**: Perfected internal UUID to index mapping system, ensuring correct reference relationships
-- **Property Format Standardization**: Fixed component property order and format, eliminating engine parsing errors
-
-#### 🐛 Bug Fixes
-- **Fixed Prefab Import Errors**: Resolved `Cannot read properties of undefined (reading '_name')` error
-- **Fixed Engine Compatibility**: Resolved `placeHolder.initDefault is not a function` error
-- **Fixed Property Overwriting**: Prevented critical properties like `_objFlags` from being overwritten by component data
-- **Fixed Reference Loss**: Ensured all types of references are correctly saved and loaded
-
-#### 📈 Feature Enhancements
-- **Complete Component Property Preservation**: All component properties including private properties (like _group, _density, etc.)
-- **Child Node Structure Support**: Proper handling of prefab hierarchical structures and child node relationships
-- **Transform Property Processing**: Preserved node position, rotation, scale, and layer information
-- **Debug Information Optimization**: Added detailed reference processing logs for easier issue tracking
-
-#### 💡 Technical Breakthroughs
-- **Reference Type Identification**: Intelligently distinguish between internal and external references, avoiding invalid references
-- **Format Compatibility**: Generated prefabs are 100% compatible with manually created prefab formats
-- **Engine Integration**: Prefabs can be properly mounted to scenes without any runtime errors
-- **Performance Optimization**: Optimized prefab creation workflow, improving processing efficiency for large prefabs
-
-**🎉 Prefab creation functionality is now fully operational, supporting complex component reference relationships and complete prefab structures!**
-
-### v1.3.0 - July 25, 2024
-
-#### 🆕 New Features
-- **Integrated Tool Management Panel**: Added comprehensive tool management functionality directly into the main control panel
-- **Tool Configuration System**: Implemented selective tool enabling/disabling with persistent configurations
-- **Dynamic Tool Loading**: Enhanced tool discovery to dynamically load all 158 available tools from the MCP server
-- **Real-time Tool State Management**: Added real-time updates for tool counts and status when individual tools are toggled
-- **Configuration Persistence**: Automatic saving and loading of tool configurations across editor sessions
-
-#### 🔧 Improvements
-- **Unified Panel Interface**: Merged tool management into the main MCP server panel as a tab, eliminating the need for separate panels
-- **Enhanced Server Settings**: Improved server configuration management with better persistence and loading
-- **Vue 3 Integration**: Upgraded to Vue 3 Composition API for better reactivity and performance
-- **Better Error Handling**: Added comprehensive error handling with rollback mechanisms for failed operations
-- **Improved UI/UX**: Enhanced visual design with proper dividers, distinct block styles, and non-transparent modal backgrounds
-
-#### 🐛 Bug Fixes
-- **Fixed Tool State Persistence**: Resolved issues where tool states would reset upon tab switching or panel re-opening
-- **Fixed Configuration Loading**: Corrected server settings loading issues and message registration problems
-- **Fixed Checkbox Interactions**: Resolved checkbox unchecking issues and improved reactivity
-- **Fixed Panel Scrolling**: Ensured proper scrolling functionality in the tool management panel
-- **Fixed IPC Communication**: Resolved various IPC communication issues between frontend and backend
-
-#### 🏗️ Technical Improvements
-- **Simplified Architecture**: Removed multi-configuration complexity, focusing on single configuration management
-- **Better Type Safety**: Enhanced TypeScript type definitions and interfaces
-- **Improved Data Synchronization**: Better synchronization between frontend UI state and backend tool manager
-- **Enhanced Debugging**: Added comprehensive logging and debugging capabilities
-
-#### 📊 Statistics
-- **Total Tools**: Increased from 151 to 158 tools
-- **Categories**: 13 tool categories with comprehensive coverage
-- **Editor Control**: Achieved 98% editor functionality coverage
-
-### v1.2.0 - Previous Version
-- Initial release with 151 tools
-- Basic MCP server functionality
-- Scene, node, component, and prefab operations
-- Project control and debugging tools
-
 
 
 ## Quick Usage
@@ -339,9 +259,6 @@ cocos-mcp-server/
 │   │   ├── preferences-tools.ts
 │   │   ├── server-tools.ts
 │   │   ├── broadcast-tools.ts
-│   │   ├── scene-advanced-tools.ts (integrated into node-tools.ts and scene-tools.ts)
-│   │   ├── scene-view-tools.ts
-│   │   ├── reference-image-tools.ts
 │   │   └── asset-advanced-tools.ts
 │   ├── panels/               # UI panel implementation
 │   └── test/                 # Test files
@@ -421,4 +338,5 @@ This plug-in is for Cocos Creator project use, and the source code is packaged t
 
 ## Contact me to join the group
 <img alt="image" src="https://github.com/user-attachments/assets/a276682c-4586-480c-90e5-6db132e89e0f" width="400" height="400" />
+
 
