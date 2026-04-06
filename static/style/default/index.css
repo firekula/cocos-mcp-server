@@ -360,8 +360,11 @@ ui-prop {
 /* 按钮样式 */
 ui-button.small {
     font-size: 12px;
-    padding: 4px 8px;
+    font-weight: 600; /* 加粗以证明修改生效 */
+    padding: 0px 10px 4px 10px; /* 改为上0下4，强行将内部文字往上托起 */
     min-width: auto;
+    height: 26px;
+    line-height: 24px;
 }
 
 ui-button.secondary {

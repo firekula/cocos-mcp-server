@@ -10,6 +10,7 @@ export class ToolManager {
     constructor() {
         this.settings = this.readToolManagerSettings();
         this.initializeAvailableTools();
+        this.syncConfigurationsWithAvailableTools();
         
         // 如果没有配置，自动创建一个默认配置
         if (this.settings.configurations.length === 0) {
@@ -78,6 +79,50 @@ export class ToolManager {
         }
     }
 
+    private syncConfigurationsWithAvailableTools(): void {
+        let changed = false;
+        
+        // 创建 availableTools 的查找映射
+        const availableMap = new Map<string, ToolConfig>();
+        this.availableTools.forEach(t => availableMap.set(`${t.category}_${t.name}`, t));
+
+        this.settings.configurations.forEach(config => {
+            const syncedTools: ToolConfig[] = [];
+            
+            // 保留仍然存在的工具，继承其 enabled 状态
+            config.tools.forEach(tool => {
+                const key = `${tool.category}_${tool.name}`;
+                if (availableMap.has(key)) {
+                    const availableTool = availableMap.get(key)!;
+                    syncedTools.push({
+                        ...availableTool,
+                        enabled: tool.enabled
+                    });
+                } else {
+                    changed = true; // 发现失效工具
+                }
+            });
+
+            // 添加配置中缺失的新工具
+            availableMap.forEach((availableTool, key) => {
+                if (!config.tools.some(t => `${t.category}_${t.name}` === key)) {
+                    syncedTools.push({ ...availableTool });
+                    changed = true;
+                }
+            });
+
+            if (changed) {
+                config.tools = syncedTools;
+                config.updatedAt = new Date().toISOString();
+            }
+        });
+
+        if (changed) {
+            console.log('[ToolManager] Configurations synchronized with actual available tools.');
+            this.saveSettings();
+        }
+    }
+
     private initializeAvailableTools(): void {
         // 从MCP服务器获取真实的工具列表
         try {
@@ -122,30 +167,30 @@ export class ToolManager {
     }
 
     private initializeDefaultTools(): void {
-        // 默认工具列表作为后备方案
+        // 精简版默认工具列表作为后备方案（同步后仅剩实际可用的 27 款）
         const toolCategories = [
             { category: 'scene', name: '场景工具', tools: [
                 { name: 'get_current_scene', description: '获取当前场景信息（含层级）' },
-                { name: 'create_scene', description: '创建新场景' },
-                { name: 'save_scene', description: '保存或另存为场景' },
-                { name: 'open_scene', description: '加载场景' },
                 { name: 'get_scene_list', description: '获取场景列表' },
+                { name: 'open_scene', description: '加载场景' },
+                { name: 'save_scene', description: '保存或另存为场景' },
+                { name: 'create_scene', description: '创建新场景' },
                 { name: 'close_scene', description: '关闭场景' }
             ]},
             { category: 'node', name: '节点工具', tools: [
-                { name: 'query_nodes', description: '查询或获取全部节点' },
                 { name: 'create_node', description: '创建或复制节点' },
-                { name: 'delete_node', description: '删除节点' },
-                { name: 'update_node', description: '更新节点属性或Transform' },
                 { name: 'get_node_info', description: '获取节点信息' },
+                { name: 'query_nodes', description: '查询或获取全部节点' },
+                { name: 'update_node', description: '更新节点属性或Transform' },
+                { name: 'delete_node', description: '删除节点' },
                 { name: 'move_node', description: '移动节点' },
                 { name: 'detect_node_type', description: '检测节点2D/3D类型' }
             ]},
             { category: 'component', name: '组件工具', tools: [
                 { name: 'add_component', description: '添加组件到节点' },
                 { name: 'remove_component', description: '从节点移除组件' },
-                { name: 'set_component_property', description: '设置组件属性' },
                 { name: 'get_components', description: '获取节点下的组件或特定组件' },
+                { name: 'set_component_property', description: '设置组件属性' },
                 { name: 'attach_script', description: '附加脚本到节点' }
             ]},
             { category: 'prefab', name: '预制体工具', tools: [
@@ -161,49 +206,7 @@ export class ToolManager {
                 { name: 'deleteAsset', description: '删除资源' }
             ]},
             { category: 'debug', name: '调试工具', tools: [
-                { name: 'getConsoleLogs', description: '获取控制台日志' },
-                { name: 'getPerformanceStats', description: '获取性能统计' },
-                { name: 'validateScene', description: '验证场景' },
-                { name: 'getErrorLogs', description: '获取错误日志' }
-            ]},
-            { category: 'preferences', name: '偏好设置工具', tools: [
-                { name: 'getPreferences', description: '获取偏好设置' },
-                { name: 'setPreferences', description: '设置偏好设置' },
-                { name: 'resetPreferences', description: '重置偏好设置' }
-            ]},
-            { category: 'server', name: '服务器工具', tools: [
-                { name: 'getServerStatus', description: '获取服务器状态' },
-                { name: 'getConnectedClients', description: '获取连接的客户端' },
-                { name: 'getServerLogs', description: '获取服务器日志' }
-            ]},
-            { category: 'broadcast', name: '广播工具', tools: [
-                { name: 'broadcastMessage', description: '广播消息' },
-                { name: 'getBroadcastHistory', description: '获取广播历史' }
-            ]},
-            { category: 'sceneAdvanced', name: '高级场景工具', tools: [
-                { name: 'optimizeScene', description: '优化场景' },
-                { name: 'analyzeScene', description: '分析场景' },
-                { name: 'batchOperation', description: '批量操作' }
-            ]},
-            { category: 'sceneView', name: '场景视图工具', tools: [
-                { name: 'getViewportInfo', description: '获取视口信息' },
-                { name: 'setViewportCamera', description: '设置视口相机' },
-                { name: 'focusOnNode', description: '聚焦到节点' }
-            ]},
-            { category: 'referenceImage', name: '参考图片工具', tools: [
-                { name: 'addReferenceImage', description: '添加参考图片' },
-                { name: 'removeReferenceImage', description: '移除参考图片' },
-                { name: 'getReferenceImages', description: '获取参考图片列表' }
-            ]},
-            { category: 'assetAdvanced', name: '高级资源工具', tools: [
-                { name: 'importAsset', description: '导入资源' },
-                { name: 'exportAsset', description: '导出资源' },
-                { name: 'processAsset', description: '处理资源' }
-            ]},
-            { category: 'validation', name: '验证工具', tools: [
-                { name: 'validateProject', description: '验证项目' },
-                { name: 'validateAssets', description: '验证资源' },
-                { name: 'generateReport', description: '生成报告' }
+                { name: 'getConsoleLogs', description: '获取控制台日志' }
             ]}
         ];
 
@@ -380,9 +383,9 @@ export class ToolManager {
         }
 
         this.settings.configurations.push(config);
-        this.saveSettings();
+        this.syncConfigurationsWithAvailableTools();
 
-        return config;
+        return this.settings.configurations[this.settings.configurations.length - 1];
     }
 
     public getEnabledTools(): ToolConfig[] {
