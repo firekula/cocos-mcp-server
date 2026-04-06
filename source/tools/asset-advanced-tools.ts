@@ -486,10 +486,65 @@ export class AssetAdvancedTools implements ToolExecutor {
 
     private async getAssetDependencies(urlOrUUID: string, direction: string = 'dependencies'): Promise<ToolResponse> {
         return new Promise((resolve) => {
-            // Note: This would require scene analysis or additional APIs not available in current documentation
-            resolve({
-                success: false,
-                error: 'Asset dependency analysis requires additional APIs not available in current Cocos Creator MCP implementation. Consider using the Editor UI for dependency analysis.'
+            Editor.Message.request('asset-db', 'query-asset-info', urlOrUUID).then((assetInfo: any) => {
+                if (!assetInfo) {
+                    resolve({ success: false, error: 'Asset not found' });
+                    return;
+                }
+                
+                Editor.Message.request('asset-db', 'query-path', assetInfo.uuid).then((fullPath: string | null) => {
+                    const dependencies = new Set<string>();
+                    
+                    // If the engine directly provides valid dependencies
+                    if (assetInfo.dependUuids && Array.isArray(assetInfo.dependUuids) && assetInfo.dependUuids.length > 0) {
+                        assetInfo.dependUuids.forEach((u: string) => dependencies.add(u));
+                    } else if (fullPath) {
+                        // Fallback: Read file and .meta to extract __uuid__
+                        try {
+                            const fs = require('fs');
+                            let contentToSearch = "";
+                            
+                            // 1. Read the primary file if it's text-based (to avoid binary garbage)
+                            const isTextAsset = /\.(scene|prefab|mtl|material|anim|effect|json|txt|ts|fire)$/i.test(fullPath);
+                            if (isTextAsset && fs.existsSync(fullPath)) {
+                                contentToSearch += fs.readFileSync(fullPath, 'utf8');
+                            }
+                            // 2. Read the .meta file
+                            const metaPath = fullPath + '.meta';
+                            if (fs.existsSync(metaPath)) {
+                                contentToSearch += fs.readFileSync(metaPath, 'utf8');
+                            }
+                            
+                            // 3. Extract all UUIDs
+                            const regex = /"__uuid__"\s*:\s*"([^"]+)"/g;
+                            let match;
+                            while ((match = regex.exec(contentToSearch)) !== null) {
+                                // Exclude self
+                                if (match[1] !== assetInfo.uuid && !match[1].startsWith(assetInfo.uuid + '@')) {
+                                    dependencies.add(match[1]);
+                                }
+                            }
+                        } catch (err: any) {
+                            console.warn("Failed to parse asset content for dependencies", err);
+                        }
+                    }
+
+                    const depsArray = Array.from(dependencies);
+                    resolve({
+                        success: true,
+                        data: {
+                            uuid: assetInfo.uuid,
+                            url: assetInfo.url,
+                            direction: 'dependencies', 
+                            dependencies: depsArray,
+                            message: `Found ${depsArray.length} dependencies`
+                        }
+                    });
+                }).catch((err: any) => {
+                    resolve({ success: false, error: `Failed to resolve physical path: ${err.message}` });
+                });
+            }).catch((err: Error) => {
+                resolve({ success: false, error: `Failed to query asset info: ${err.message}` });
             });
         });
     }

@@ -41,21 +41,7 @@ export class ComponentTools implements ToolExecutor {
             },
             {
                 name: 'get_components',
-                description: 'Get all components of a node',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        nodeUuid: {
-                            type: 'string',
-                            description: 'Node UUID'
-                        }
-                    },
-                    required: ['nodeUuid']
-                }
-            },
-            {
-                name: 'get_component_info',
-                description: 'Get specific component information',
+                description: 'Get component(s) of a node. If componentType is provided, gets specific component info, otherwise gets all components.',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -65,10 +51,10 @@ export class ComponentTools implements ToolExecutor {
                         },
                         componentType: {
                             type: 'string',
-                            description: 'Component type to get info for'
+                            description: 'Optional. Specific component type to get info for'
                         }
                     },
-                    required: ['nodeUuid', 'componentType']
+                    required: ['nodeUuid']
                 }
             },
             {
@@ -189,9 +175,10 @@ export class ComponentTools implements ToolExecutor {
             case 'remove_component':
                 return await this.removeComponent(args.nodeUuid, args.componentType);
             case 'get_components':
+                if (args.componentType) {
+                    return await this.getComponentInfo(args.nodeUuid, args.componentType);
+                }
                 return await this.getComponents(args.nodeUuid);
-            case 'get_component_info':
-                return await this.getComponentInfo(args.nodeUuid, args.componentType);
             case 'set_component_property':
                 return await this.setComponentProperty(args);
             case 'attach_script':

@@ -29,163 +29,34 @@ export class DebugTools implements ToolExecutor {
         }
     }
 
-    getTools(): ToolDefinition[] {
+        getTools(): ToolDefinition[] {
         return [
             {
-                name: 'get_console_logs',
-                description: 'Get editor console logs',
+                name: 'debug_project_logs',
+                description: 'Get, search, or clear project/console logs',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        limit: {
-                            type: 'number',
-                            description: 'Number of recent logs to retrieve',
-                            default: 100
-                        },
-                        filter: {
-                            type: 'string',
-                            description: 'Filter logs by type',
-                            enum: ['all', 'log', 'warn', 'error', 'info'],
-                            default: 'all'
-                        }
-                    }
-                }
-            },
-            {
-                name: 'clear_console',
-                description: 'Clear editor console',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'execute_script',
-                description: 'Execute JavaScript in scene context',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        script: {
-                            type: 'string',
-                            description: 'JavaScript code to execute'
-                        }
+                        action: { type: 'string', enum: ['get_console', 'clear_console', 'get_project_logs', 'get_log_info', 'search_project_logs'] },
+                        limitOrLines: { type: 'number', default: 100 },
+                        filterOrPattern: { type: 'string' },
+                        logLevel: { type: 'string', default: 'ALL' }
                     },
-                    required: ['script']
+                    required: ['action']
                 }
             },
             {
-                name: 'get_node_tree',
-                description: 'Get detailed node tree for debugging',
+                name: 'debug_scene_state',
+                description: 'Debug scene state, performance, node tree, and execute scripts',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        rootUuid: {
-                            type: 'string',
-                            description: 'Root node UUID (optional, uses scene root if not provided)'
-                        },
-                        maxDepth: {
-                            type: 'number',
-                            description: 'Maximum tree depth',
-                            default: 10
-                        }
-                    }
-                }
-            },
-            {
-                name: 'get_performance_stats',
-                description: 'Get performance statistics',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'validate_scene',
-                description: 'Validate current scene for issues',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        checkMissingAssets: {
-                            type: 'boolean',
-                            description: 'Check for missing asset references',
-                            default: true
-                        },
-                        checkPerformance: {
-                            type: 'boolean',
-                            description: 'Check for performance issues',
-                            default: true
-                        }
-                    }
-                }
-            },
-            {
-                name: 'get_editor_info',
-                description: 'Get editor and environment information',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'get_project_logs',
-                description: 'Get project logs from temp/logs/project.log file',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        lines: {
-                            type: 'number',
-                            description: 'Number of lines to read from the end of the log file (default: 100)',
-                            default: 100,
-                            minimum: 1,
-                            maximum: 10000
-                        },
-                        filterKeyword: {
-                            type: 'string',
-                            description: 'Filter logs containing specific keyword (optional)'
-                        },
-                        logLevel: {
-                            type: 'string',
-                            description: 'Filter by log level',
-                            enum: ['ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE', 'ALL'],
-                            default: 'ALL'
-                        }
-                    }
-                }
-            },
-            {
-                name: 'get_log_file_info',
-                description: 'Get information about the project log file',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'search_project_logs',
-                description: 'Search for specific patterns or errors in project logs',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        pattern: {
-                            type: 'string',
-                            description: 'Search pattern (supports regex)'
-                        },
-                        maxResults: {
-                            type: 'number',
-                            description: 'Maximum number of matching results',
-                            default: 20,
-                            minimum: 1,
-                            maximum: 100
-                        },
-                        contextLines: {
-                            type: 'number',
-                            description: 'Number of context lines to show around each match',
-                            default: 2,
-                            minimum: 0,
-                            maximum: 10
-                        }
+                        action: { type: 'string', enum: ['execute_script', 'get_node_tree', 'get_performance', 'validate_scene', 'get_editor_info'] },
+                        script: { type: 'string' },
+                        rootUuid: { type: 'string' },
+                        maxDepth: { type: 'number', default: 10 }
                     },
-                    required: ['pattern']
+                    required: ['action']
                 }
             }
         ];
@@ -193,30 +64,30 @@ export class DebugTools implements ToolExecutor {
 
     async execute(toolName: string, args: any): Promise<ToolResponse> {
         switch (toolName) {
-            case 'get_console_logs':
-                return await this.getConsoleLogs(args.limit, args.filter);
-            case 'clear_console':
-                return await this.clearConsole();
-            case 'execute_script':
-                return await this.executeScript(args.script);
-            case 'get_node_tree':
-                return await this.getNodeTree(args.rootUuid, args.maxDepth);
-            case 'get_performance_stats':
-                return await this.getPerformanceStats();
-            case 'validate_scene':
-                return await this.validateScene(args);
-            case 'get_editor_info':
-                return await this.getEditorInfo();
-            case 'get_project_logs':
-                return await this.getProjectLogs(args.lines, args.filterKeyword, args.logLevel);
-            case 'get_log_file_info':
-                return await this.getLogFileInfo();
-            case 'search_project_logs':
-                return await this.searchProjectLogs(args.pattern, args.maxResults, args.contextLines);
+            case 'debug_project_logs':
+                switch (args.action) {
+                    case 'get_console': return await this.getConsoleLogs(args.limitOrLines, args.filterOrPattern || 'all');
+                    case 'clear_console': return await this.clearConsole();
+                    case 'get_project_logs': return await this.getProjectLogs(args.limitOrLines, args.filterOrPattern, args.logLevel);
+                    case 'get_log_info': return await this.getLogFileInfo();
+                    case 'search_project_logs': return await this.searchProjectLogs(args.filterOrPattern, args.limitOrLines, 2);
+                    default: throw new Error('Invalid project logs action');
+                }
+            case 'debug_scene_state':
+                switch (args.action) {
+                    case 'execute_script': return await this.executeScript(args.script);
+                    case 'get_node_tree': return await this.getNodeTree(args.rootUuid, args.maxDepth);
+                    case 'get_performance': return await this.getPerformanceStats();
+                    case 'validate_scene': return await this.validateScene({checkMissingAssets: true, checkPerformance: true});
+                    case 'get_editor_info': return await this.getEditorInfo();
+                    default: throw new Error('Invalid scene state action');
+                }
             default:
                 throw new Error(`Unknown tool: ${toolName}`);
         }
     }
+
+
 
     private async getConsoleLogs(limit: number = 100, filter: string = 'all'): Promise<ToolResponse> {
         let logs = this.consoleMessages;
@@ -292,9 +163,12 @@ export class DebugTools implements ToolExecutor {
                     };
 
                     if (nodeData.children && nodeData.children.length > 0) {
-                        for (const childId of nodeData.children) {
-                            const childTree = await buildTree(childId, depth + 1);
-                            tree.children.push(childTree);
+                        for (const child of nodeData.children) {
+                            const childUuid = typeof child === 'string' ? child : child.uuid;
+                            if (childUuid) {
+                                const childTree = await buildTree(childUuid, depth + 1);
+                                tree.children.push(childTree);
+                            }
                         }
                     }
 
@@ -309,9 +183,10 @@ export class DebugTools implements ToolExecutor {
                     resolve({ success: true, data: tree });
                 });
             } else {
-                Editor.Message.request('scene', 'query-hierarchy').then(async (hierarchy: any) => {
+                Editor.Message.request('scene', 'query-node-tree').then(async (hierarchy: any) => {
                     const trees = [];
-                    for (const rootNode of hierarchy.children) {
+                    const rootNodes = Array.isArray(hierarchy) ? hierarchy : (hierarchy.children || (hierarchy.uuid ? [hierarchy] : []));
+                    for (const rootNode of rootNodes) {
                         const tree = await buildTree(rootNode.uuid);
                         trees.push(tree);
                     }
@@ -350,23 +225,14 @@ export class DebugTools implements ToolExecutor {
         const issues: ValidationIssue[] = [];
 
         try {
-            // Check for missing assets
-            if (options.checkMissingAssets) {
-                const assetCheck = await Editor.Message.request('scene', 'check-missing-assets');
-                if (assetCheck && assetCheck.missing) {
-                    issues.push({
-                        type: 'error',
-                        category: 'assets',
-                        message: `Found ${assetCheck.missing.length} missing asset references`,
-                        details: assetCheck.missing
-                    });
-                }
-            }
+            // Check for missing assets (Skipped as check-missing-assets API is deprecated/missing in 3.x)
+            // if (options.checkMissingAssets) { ... }
 
             // Check for performance issues
             if (options.checkPerformance) {
-                const hierarchy = await Editor.Message.request('scene', 'query-hierarchy');
-                const nodeCount = this.countNodes(hierarchy.children);
+                const hierarchy: any = await Editor.Message.request('scene', 'query-node-tree');
+                const rootNodes = Array.isArray(hierarchy) ? hierarchy : (hierarchy.children || (hierarchy.uuid ? [hierarchy] : []));
+                const nodeCount = this.countNodes(rootNodes);
                 
                 if (nodeCount > 1000) {
                     issues.push({

@@ -88,14 +88,6 @@ export class ToolManager {
             const { PrefabTools } = require('./prefab-tools');
             const { ProjectTools } = require('./project-tools');
             const { DebugTools } = require('./debug-tools');
-            const { PreferencesTools } = require('./preferences-tools');
-            const { ServerTools } = require('./server-tools');
-            const { BroadcastTools } = require('./broadcast-tools');
-            const { SceneAdvancedTools } = require('./scene-advanced-tools');
-            const { SceneViewTools } = require('./scene-view-tools');
-            const { ReferenceImageTools } = require('./reference-image-tools');
-            const { AssetAdvancedTools } = require('./asset-advanced-tools');
-            const { ValidationTools } = require('./validation-tools');
 
             // 初始化工具实例
             const tools = {
@@ -104,15 +96,7 @@ export class ToolManager {
                 component: new ComponentTools(),
                 prefab: new PrefabTools(),
                 project: new ProjectTools(),
-                debug: new DebugTools(),
-                preferences: new PreferencesTools(),
-                server: new ServerTools(),
-                broadcast: new BroadcastTools(),
-                sceneAdvanced: new SceneAdvancedTools(),
-                sceneView: new SceneViewTools(),
-                referenceImage: new ReferenceImageTools(),
-                assetAdvanced: new AssetAdvancedTools(),
-                validation: new ValidationTools()
+                debug: new DebugTools()
             };
 
             // 从每个工具类获取工具列表
@@ -141,25 +125,28 @@ export class ToolManager {
         // 默认工具列表作为后备方案
         const toolCategories = [
             { category: 'scene', name: '场景工具', tools: [
-                { name: 'getCurrentSceneInfo', description: '获取当前场景信息' },
-                { name: 'getSceneHierarchy', description: '获取场景层级结构' },
-                { name: 'createNewScene', description: '创建新场景' },
-                { name: 'saveScene', description: '保存场景' },
-                { name: 'loadScene', description: '加载场景' }
+                { name: 'get_current_scene', description: '获取当前场景信息（含层级）' },
+                { name: 'create_scene', description: '创建新场景' },
+                { name: 'save_scene', description: '保存或另存为场景' },
+                { name: 'open_scene', description: '加载场景' },
+                { name: 'get_scene_list', description: '获取场景列表' },
+                { name: 'close_scene', description: '关闭场景' }
             ]},
             { category: 'node', name: '节点工具', tools: [
-                { name: 'getAllNodes', description: '获取所有节点' },
-                { name: 'findNodeByName', description: '根据名称查找节点' },
-                { name: 'createNode', description: '创建节点' },
-                { name: 'deleteNode', description: '删除节点' },
-                { name: 'setNodeProperty', description: '设置节点属性' },
-                { name: 'getNodeInfo', description: '获取节点信息' }
+                { name: 'query_nodes', description: '查询或获取全部节点' },
+                { name: 'create_node', description: '创建或复制节点' },
+                { name: 'delete_node', description: '删除节点' },
+                { name: 'update_node', description: '更新节点属性或Transform' },
+                { name: 'get_node_info', description: '获取节点信息' },
+                { name: 'move_node', description: '移动节点' },
+                { name: 'detect_node_type', description: '检测节点2D/3D类型' }
             ]},
             { category: 'component', name: '组件工具', tools: [
-                { name: 'addComponentToNode', description: '添加组件到节点' },
-                { name: 'removeComponentFromNode', description: '从节点移除组件' },
-                { name: 'setComponentProperty', description: '设置组件属性' },
-                { name: 'getComponentInfo', description: '获取组件信息' }
+                { name: 'add_component', description: '添加组件到节点' },
+                { name: 'remove_component', description: '从节点移除组件' },
+                { name: 'set_component_property', description: '设置组件属性' },
+                { name: 'get_components', description: '获取节点下的组件或特定组件' },
+                { name: 'attach_script', description: '附加脚本到节点' }
             ]},
             { category: 'prefab', name: '预制体工具', tools: [
                 { name: 'createPrefabFromNode', description: '从节点创建预制体' },

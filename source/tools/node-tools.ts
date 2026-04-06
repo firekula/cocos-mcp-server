@@ -13,11 +13,15 @@ export class NodeTools implements ToolExecutor {
                     properties: {
                         name: {
                             type: 'string',
-                            description: 'Node name'
+                            description: 'Node name (optional if sourceUuid is provided for duplication)'
                         },
                         parentUuid: {
                             type: 'string',
                             description: 'Parent node UUID. STRONGLY RECOMMENDED: Always provide this parameter. Use get_current_scene or get_all_nodes to find parent UUIDs. If not provided, node will be created at scene root.'
+                        },
+                        sourceUuid: {
+                            type: 'string',
+                            description: 'Source node UUID to duplicate. If provided, will duplicate this node instead of creating a new one.'
                         },
                         nodeType: {
                             type: 'string',
@@ -102,49 +106,31 @@ export class NodeTools implements ToolExecutor {
                 }
             },
             {
-                name: 'find_nodes',
-                description: 'Find nodes by name pattern',
+                name: 'query_nodes',
+                description: 'Find nodes by pattern, exact name, or get all nodes if no pattern is provided',
                 inputSchema: {
                     type: 'object',
                     properties: {
                         pattern: {
                             type: 'string',
-                            description: 'Name pattern to search'
+                            description: 'Name pattern or exact name'
                         },
                         exactMatch: {
                             type: 'boolean',
                             description: 'Exact match or partial match',
                             default: false
+                        },
+                        firstMatchOnly: {
+                            type: 'boolean',
+                            description: 'Only return the first match (like old find_node_by_name)',
+                            default: false
                         }
-                    },
-                    required: ['pattern']
+                    }
                 }
             },
             {
-                name: 'find_node_by_name',
-                description: 'Find first node by exact name',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        name: {
-                            type: 'string',
-                            description: 'Node name to find'
-                        }
-                    },
-                    required: ['name']
-                }
-            },
-            {
-                name: 'get_all_nodes',
-                description: 'Get all nodes in the scene with their UUIDs',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'set_node_property',
-                description: 'Set node property value (prefer using set_node_transform for active/layer/mobility/position/rotation/scale)',
+                name: 'update_node',
+                description: 'Update node properties and/or transformations',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -158,47 +144,24 @@ export class NodeTools implements ToolExecutor {
                         },
                         value: {
                             description: 'Property value'
-                        }
-                    },
-                    required: ['uuid', 'property', 'value']
-                }
-            },
-            {
-                name: 'set_node_transform',
-                description: 'Set node transform properties (position, rotation, scale) with unified interface. Automatically handles 2D/3D node differences.',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        uuid: {
-                            type: 'string',
-                            description: 'Node UUID'
                         },
-                        position: {
+                        transform: {
                             type: 'object',
+                            description: 'Transform properties to update',
                             properties: {
-                                x: { type: 'number' },
-                                y: { type: 'number' },
-                                z: { type: 'number', description: 'Z coordinate (ignored for 2D nodes)' }
-                            },
-                            description: 'Node position. For 2D nodes, only x,y are used; z is ignored. For 3D nodes, all coordinates are used.'
-                        },
-                        rotation: {
-                            type: 'object',
-                            properties: {
-                                x: { type: 'number', description: 'X rotation (ignored for 2D nodes)' },
-                                y: { type: 'number', description: 'Y rotation (ignored for 2D nodes)' },
-                                z: { type: 'number', description: 'Z rotation (main rotation axis for 2D nodes)' }
-                            },
-                            description: 'Node rotation in euler angles. For 2D nodes, only z rotation is used. For 3D nodes, all axes are used.'
-                        },
-                        scale: {
-                            type: 'object',
-                            properties: {
-                                x: { type: 'number' },
-                                y: { type: 'number' },
-                                z: { type: 'number', description: 'Z scale (usually 1 for 2D nodes)' }
-                            },
-                            description: 'Node scale. For 2D nodes, z is typically 1. For 3D nodes, all axes are used.'
+                                position: {
+                                    type: 'object',
+                                    properties: { x: { type: 'number' }, y: { type: 'number' }, z: { type: 'number' } }
+                                },
+                                rotation: {
+                                    type: 'object',
+                                    properties: { x: { type: 'number' }, y: { type: 'number' }, z: { type: 'number' } }
+                                },
+                                scale: {
+                                    type: 'object',
+                                    properties: { x: { type: 'number' }, y: { type: 'number' }, z: { type: 'number' } }
+                                }
+                            }
                         }
                     },
                     required: ['uuid']
@@ -241,25 +204,7 @@ export class NodeTools implements ToolExecutor {
                     required: ['nodeUuid', 'newParentUuid']
                 }
             },
-            {
-                name: 'duplicate_node',
-                description: 'Duplicate a node',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        uuid: {
-                            type: 'string',
-                            description: 'Node UUID to duplicate'
-                        },
-                        includeChildren: {
-                            type: 'boolean',
-                            description: 'Include children nodes',
-                            default: true
-                        }
-                    },
-                    required: ['uuid']
-                }
-            },
+
             {
                 name: 'detect_node_type',
                 description: 'Detect if a node is 2D or 3D based on its components and properties',
@@ -280,25 +225,32 @@ export class NodeTools implements ToolExecutor {
     async execute(toolName: string, args: any): Promise<ToolResponse> {
         switch (toolName) {
             case 'create_node':
+                if (args.sourceUuid) {
+                    return await this.duplicateNode(args.sourceUuid, true); // Assuming includeChildren defaults to true
+                }
                 return await this.createNode(args);
             case 'get_node_info':
                 return await this.getNodeInfo(args.uuid);
-            case 'find_nodes':
-                return await this.findNodes(args.pattern, args.exactMatch);
-            case 'find_node_by_name':
-                return await this.findNodeByName(args.name);
-            case 'get_all_nodes':
-                return await this.getAllNodes();
-            case 'set_node_property':
-                return await this.setNodeProperty(args.uuid, args.property, args.value);
-            case 'set_node_transform':
-                return await this.setNodeTransform(args);
+            case 'query_nodes':
+                if (!args.pattern) return await this.getAllNodes();
+                if (args.firstMatchOnly || args.exactMatch) {
+                    return await this.findNodeByName(args.pattern);
+                } else {
+                    return await this.findNodes(args.pattern, args.exactMatch);
+                }
+            case 'update_node':
+                let responses = [];
+                if (args.transform) {
+                    responses.push(await this.setNodeTransform({uuid: args.uuid, ...args.transform}));
+                }
+                if (args.property) {
+                    responses.push(await this.setNodeProperty(args.uuid, args.property, args.value));
+                }
+                return { success: true, data: responses };
             case 'delete_node':
                 return await this.deleteNode(args.uuid);
             case 'move_node':
                 return await this.moveNode(args.nodeUuid, args.newParentUuid, args.siblingIndex);
-            case 'duplicate_node':
-                return await this.duplicateNode(args.uuid, args.includeChildren);
             case 'detect_node_type':
                 return await this.detectNodeType(args.uuid);
             default:

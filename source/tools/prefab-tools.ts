@@ -1,183 +1,36 @@
 import { ToolDefinition, ToolResponse, ToolExecutor, PrefabInfo } from '../types';
 
 export class PrefabTools implements ToolExecutor {
-    getTools(): ToolDefinition[] {
+        getTools(): ToolDefinition[] {
         return [
             {
-                name: 'get_prefab_list',
-                description: 'Get all prefabs in the project',
+                name: 'query_prefabs',
+                description: 'Query, list, load, or validate prefabs',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        folder: {
-                            type: 'string',
-                            description: 'Folder path to search (optional)',
-                            default: 'db://assets'
-                        }
-                    }
+                        action: { type: 'string', enum: ['list', 'load', 'info', 'validate'] },
+                        prefabPath: { type: 'string', description: 'Path to prefab (or folder if action=list)', default: 'db://assets' }
+                    },
+                    required: ['action']
                 }
             },
             {
-                name: 'load_prefab',
-                description: 'Load a prefab by path',
+                name: 'manage_prefab',
+                description: 'Create, instantiate, update, duplicate or restore prefabs',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        prefabPath: {
-                            type: 'string',
-                            description: 'Prefab asset path'
-                        }
+                        action: { type: 'string', enum: ['instantiate', 'create', 'update', 'revert', 'duplicate', 'restore'] },
+                        prefabPath: { type: 'string', description: 'Source prefab path' },
+                        targetPath: { type: 'string', description: 'Target prefab path (for duplicate)' },
+                        nodeUuid: { type: 'string', description: 'Node UUID for create/update/revert/restore' },
+                        parentUuid: { type: 'string', description: 'Parent UUID for instantiate' },
+                        position: { type: 'object' },
+                        prefabName: { type: 'string' },
+                        assetUuid: { type: 'string' }
                     },
-                    required: ['prefabPath']
-                }
-            },
-            {
-                name: 'instantiate_prefab',
-                description: 'Instantiate a prefab in the scene',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        prefabPath: {
-                            type: 'string',
-                            description: 'Prefab asset path'
-                        },
-                        parentUuid: {
-                            type: 'string',
-                            description: 'Parent node UUID (optional)'
-                        },
-                        position: {
-                            type: 'object',
-                            description: 'Initial position',
-                            properties: {
-                                x: { type: 'number' },
-                                y: { type: 'number' },
-                                z: { type: 'number' }
-                            }
-                        }
-                    },
-                    required: ['prefabPath']
-                }
-            },
-            {
-                name: 'create_prefab',
-                description: 'Create a prefab from a node with all children and components',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        nodeUuid: {
-                            type: 'string',
-                            description: 'Source node UUID'
-                        },
-                        savePath: {
-                            type: 'string',
-                            description: 'Path to save the prefab (e.g., db://assets/prefabs/MyPrefab.prefab)'
-                        },
-                        prefabName: {
-                            type: 'string',
-                            description: 'Prefab name'
-                        }
-                    },
-                    required: ['nodeUuid', 'savePath', 'prefabName']
-                }
-            },
-            {
-                name: 'update_prefab',
-                description: 'Update an existing prefab',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        prefabPath: {
-                            type: 'string',
-                            description: 'Prefab asset path'
-                        },
-                        nodeUuid: {
-                            type: 'string',
-                            description: 'Node UUID with changes'
-                        }
-                    },
-                    required: ['prefabPath', 'nodeUuid']
-                }
-            },
-            {
-                name: 'revert_prefab',
-                description: 'Revert prefab instance to original',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        nodeUuid: {
-                            type: 'string',
-                            description: 'Prefab instance node UUID'
-                        }
-                    },
-                    required: ['nodeUuid']
-                }
-            },
-            {
-                name: 'get_prefab_info',
-                description: 'Get detailed prefab information',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        prefabPath: {
-                            type: 'string',
-                            description: 'Prefab asset path'
-                        }
-                    },
-                    required: ['prefabPath']
-                }
-            },
-            {
-                name: 'validate_prefab',
-                description: 'Validate a prefab file format',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        prefabPath: {
-                            type: 'string',
-                            description: 'Prefab asset path'
-                        }
-                    },
-                    required: ['prefabPath']
-                }
-            },
-            {
-                name: 'duplicate_prefab',
-                description: 'Duplicate an existing prefab',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        sourcePrefabPath: {
-                            type: 'string',
-                            description: 'Source prefab path'
-                        },
-                        targetPrefabPath: {
-                            type: 'string',
-                            description: 'Target prefab path'
-                        },
-                        newPrefabName: {
-                            type: 'string',
-                            description: 'New prefab name'
-                        }
-                    },
-                    required: ['sourcePrefabPath', 'targetPrefabPath']
-                }
-            },
-            {
-                name: 'restore_prefab_node',
-                description: 'Restore prefab node using prefab asset (built-in undo record)',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        nodeUuid: {
-                            type: 'string',
-                            description: 'Prefab instance node UUID'
-                        },
-                        assetUuid: {
-                            type: 'string',
-                            description: 'Prefab asset UUID'
-                        }
-                    },
-                    required: ['nodeUuid', 'assetUuid']
+                    required: ['action']
                 }
             }
         ];
@@ -185,30 +38,30 @@ export class PrefabTools implements ToolExecutor {
 
     async execute(toolName: string, args: any): Promise<ToolResponse> {
         switch (toolName) {
-            case 'get_prefab_list':
-                return await this.getPrefabList(args.folder);
-            case 'load_prefab':
-                return await this.loadPrefab(args.prefabPath);
-            case 'instantiate_prefab':
-                return await this.instantiatePrefab(args);
-            case 'create_prefab':
-                return await this.createPrefab(args);
-            case 'update_prefab':
-                return await this.updatePrefab(args.prefabPath, args.nodeUuid);
-            case 'revert_prefab':
-                return await this.revertPrefab(args.nodeUuid);
-            case 'get_prefab_info':
-                return await this.getPrefabInfo(args.prefabPath);
-            case 'validate_prefab':
-                return await this.validatePrefab(args.prefabPath);
-            case 'duplicate_prefab':
-                return await this.duplicatePrefab(args);
-            case 'restore_prefab_node':
-                return await this.restorePrefabNode(args.nodeUuid, args.assetUuid);
+            case 'query_prefabs':
+                switch (args.action) {
+                    case 'list': return await this.getPrefabList(args.prefabPath);
+                    case 'load': return await this.loadPrefab(args.prefabPath);
+                    case 'info': return await this.getPrefabInfo(args.prefabPath);
+                    case 'validate': return await this.validatePrefab(args.prefabPath);
+                    default: throw new Error('Invalid query action');
+                }
+            case 'manage_prefab':
+                switch (args.action) {
+                    case 'instantiate': return await this.instantiatePrefab(args);
+                    case 'create': args.savePath = args.savePath || args.prefabPath; return await this.createPrefab(args);
+                    case 'update': return await this.updatePrefab(args.prefabPath, args.nodeUuid);
+                    case 'revert': return await this.revertPrefab(args.nodeUuid);
+                    case 'duplicate': return await this.duplicatePrefab({sourcePrefabPath: args.prefabPath, targetPrefabPath: args.targetPath, newPrefabName: args.prefabName});
+                    case 'restore': return await this.restorePrefabNode(args.nodeUuid, args.assetUuid);
+                    default: throw new Error('Invalid manage action');
+                }
             default:
                 throw new Error(`Unknown tool: ${toolName}`);
         }
     }
+
+
 
     private async getPrefabList(folder: string = 'db://assets'): Promise<ToolResponse> {
         return new Promise((resolve) => {
@@ -233,21 +86,21 @@ export class PrefabTools implements ToolExecutor {
 
     private async loadPrefab(prefabPath: string): Promise<ToolResponse> {
         return new Promise((resolve) => {
+            let currentAssetInfo: any = null;
             Editor.Message.request('asset-db', 'query-asset-info', prefabPath).then((assetInfo: any) => {
                 if (!assetInfo) {
                     throw new Error('Prefab not found');
                 }
-                
-                return Editor.Message.request('scene', 'load-asset', {
-                    uuid: assetInfo.uuid
-                });
-            }).then((prefabData: any) => {
+                currentAssetInfo = assetInfo;
+                // 用编辑器原生的预制体面板打开功能，替代不存在的直接 load-asset 调用
+                return Editor.Message.request('asset-db', 'open-asset', assetInfo.uuid);
+            }).then(() => {
                 resolve({
                     success: true,
                     data: {
-                        uuid: prefabData.uuid,
-                        name: prefabData.name,
-                        message: 'Prefab loaded successfully'
+                        uuid: currentAssetInfo.uuid,
+                        name: currentAssetInfo.name,
+                        message: 'Prefab opened in editor successfully'
                     }
                 });
             }).catch((err: Error) => {
@@ -1415,8 +1268,14 @@ export class PrefabTools implements ToolExecutor {
                     }
 
                     // 验证预制体格式
-                    Editor.Message.request('asset-db', 'read-asset', prefabPath).then((content: string) => {
+                    Editor.Message.request('asset-db', 'query-path', assetInfo.uuid).then((fullPath: string | null) => {
+                        const fs = require('fs');
+                        if (!fullPath || !fs.existsSync(fullPath)) {
+                            resolve({ success: false, error: `File path invalid or file does not exist on disk. Path evaluated to: ${fullPath}` });
+                            return;
+                        }
                         try {
+                            const content = fs.readFileSync(fullPath, 'utf8');
                             const prefabData = JSON.parse(content);
                             const validationResult = this.validatePrefabFormat(prefabData);
                             
@@ -1439,7 +1298,7 @@ export class PrefabTools implements ToolExecutor {
                     }).catch((error: any) => {
                         resolve({
                             success: false,
-                            error: `读取预制体文件失败: ${error.message}`
+                            error: `读取预制体物理路径失败: ${error.message}`
                         });
                     });
                 }).catch((error: any) => {

@@ -5,10 +5,21 @@ export class SceneTools implements ToolExecutor {
         return [
             {
                 name: 'get_current_scene',
-                description: 'Get current scene information',
+                description: 'Get current scene information and optionally its hierarchy',
                 inputSchema: {
                     type: 'object',
-                    properties: {}
+                    properties: {
+                        includeHierarchy: {
+                            type: 'boolean',
+                            description: 'Include the full node hierarchy of the scene',
+                            default: false
+                        },
+                        includeComponents: {
+                            type: 'boolean',
+                            description: 'Include component information (only works if includeHierarchy is true)',
+                            default: false
+                        }
+                    }
                 }
             },
             {
@@ -35,10 +46,15 @@ export class SceneTools implements ToolExecutor {
             },
             {
                 name: 'save_scene',
-                description: 'Save current scene',
+                description: 'Save current scene. If path is provided, performs save as.',
                 inputSchema: {
                     type: 'object',
-                    properties: {}
+                    properties: {
+                        path: {
+                            type: 'string',
+                            description: 'Optional path to save as new file. Leave empty to just save current scene.'
+                        }
+                    }
                 }
             },
             {
@@ -60,39 +76,11 @@ export class SceneTools implements ToolExecutor {
                 }
             },
             {
-                name: 'save_scene_as',
-                description: 'Save scene as new file',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        path: {
-                            type: 'string',
-                            description: 'Path to save the scene'
-                        }
-                    },
-                    required: ['path']
-                }
-            },
-            {
                 name: 'close_scene',
                 description: 'Close current scene',
                 inputSchema: {
                     type: 'object',
                     properties: {}
-                }
-            },
-            {
-                name: 'get_scene_hierarchy',
-                description: 'Get the complete hierarchy of current scene',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        includeComponents: {
-                            type: 'boolean',
-                            description: 'Include component information',
-                            default: false
-                        }
-                    }
                 }
             }
         ];
@@ -101,21 +89,21 @@ export class SceneTools implements ToolExecutor {
     async execute(toolName: string, args: any): Promise<ToolResponse> {
         switch (toolName) {
             case 'get_current_scene':
+                if (args.includeHierarchy) {
+                    return await this.getSceneHierarchy(args.includeComponents);
+                }
                 return await this.getCurrentScene();
             case 'get_scene_list':
                 return await this.getSceneList();
             case 'open_scene':
                 return await this.openScene(args.scenePath);
             case 'save_scene':
+                if (args.path) return await this.saveSceneAs(args.path);
                 return await this.saveScene();
             case 'create_scene':
                 return await this.createScene(args.sceneName, args.savePath);
-            case 'save_scene_as':
-                return await this.saveSceneAs(args.path);
             case 'close_scene':
                 return await this.closeScene();
-            case 'get_scene_hierarchy':
-                return await this.getSceneHierarchy(args.includeComponents);
             default:
                 throw new Error(`Unknown tool: ${toolName}`);
         }
@@ -176,14 +164,14 @@ export class SceneTools implements ToolExecutor {
 
     private async openScene(scenePath: string): Promise<ToolResponse> {
         return new Promise((resolve) => {
-            // 首先获取场景的UUID
-            Editor.Message.request('asset-db', 'query-uuid', scenePath).then((uuid: string | null) => {
-                if (!uuid) {
+            // 首先获取场景的assetInfo，从中提取UUID
+            Editor.Message.request('asset-db', 'query-asset-info', scenePath).then((assetInfo: any) => {
+                if (!assetInfo || !assetInfo.uuid) {
                     throw new Error('Scene not found');
                 }
                 
                 // 使用正确的 scene API 打开场景 (需要UUID)
-                return Editor.Message.request('scene', 'open-scene', uuid);
+                return Editor.Message.request('scene', 'open-scene', assetInfo.uuid);
             }).then(() => {
                 resolve({ success: true, message: `Scene opened: ${scenePath}` });
             }).catch((err: Error) => {

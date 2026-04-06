@@ -8,14 +8,7 @@ import { ComponentTools } from './tools/component-tools';
 import { PrefabTools } from './tools/prefab-tools';
 import { ProjectTools } from './tools/project-tools';
 import { DebugTools } from './tools/debug-tools';
-import { PreferencesTools } from './tools/preferences-tools';
-import { ServerTools } from './tools/server-tools';
-import { BroadcastTools } from './tools/broadcast-tools';
-import { SceneAdvancedTools } from './tools/scene-advanced-tools';
-import { SceneViewTools } from './tools/scene-view-tools';
-import { ReferenceImageTools } from './tools/reference-image-tools';
-import { AssetAdvancedTools } from './tools/asset-advanced-tools';
-import { ValidationTools } from './tools/validation-tools';
+
 
 export class MCPServer {
     private settings: MCPServerSettings;
@@ -39,14 +32,6 @@ export class MCPServer {
             this.tools.prefab = new PrefabTools();
             this.tools.project = new ProjectTools();
             this.tools.debug = new DebugTools();
-            this.tools.preferences = new PreferencesTools();
-            this.tools.server = new ServerTools();
-            this.tools.broadcast = new BroadcastTools();
-            this.tools.sceneAdvanced = new SceneAdvancedTools();
-            this.tools.sceneView = new SceneViewTools();
-            this.tools.referenceImage = new ReferenceImageTools();
-            this.tools.assetAdvanced = new AssetAdvancedTools();
-            this.tools.validation = new ValidationTools();
             console.log('[MCPServer] Tools initialized successfully');
         } catch (error) {
             console.error('[MCPServer] Error initializing tools:', error);
