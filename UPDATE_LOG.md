@@ -1,5 +1,9 @@
+### 2026-04-06 (Bug Fix)
+- **Fix**: 修复了服务器首选项中“自动启动”与“调试日志”勾选后无法落盘生效的问题。
+  - 通过替换 `v-model` 为 `@change` 事件解决了 WebComponent (`ui-checkbox`/`ui-num-input`) 事件双向绑定失效。
+  - 修正了持久化 payload 参数 `debugLog` 的拼写错误，与后台类型结构 `enableDebugLog` 对齐。
+
 ### 2026-04-06
-- **Fix**: Updated core tool IPC messaging to resolve API hallucination errors.
   - `scene_open_scene`: replaced `query-uuid` with `query-asset-info` and used returned uuid.
   - `prefab_load_prefab`: replaced deprecated/hallucinated `scene:load-asset` with `asset-db:open-asset`.
   - `prefab_validate_prefab`: replaced `asset-db:read-asset` with node `fs.readFileSync` file readout.

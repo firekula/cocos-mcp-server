@@ -124,7 +124,7 @@ module.exports = Editor.Panel.define({
                             const settingsData = {
                                 port: settings.value.port,
                                 autoStart: settings.value.autoStart,
-                                debugLog: settings.value.debugLog,
+                                enableDebugLog: settings.value.debugLog,
                                 maxConnections: settings.value.maxConnections
                             };
                             
